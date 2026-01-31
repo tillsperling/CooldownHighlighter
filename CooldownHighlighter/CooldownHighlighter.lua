@@ -93,3 +93,21 @@ hooksecurefunc("ActionButtonUp", function(id)
     end
 end)
 
+hooksecurefunc("MultiActionButtonDown", function(bar, id)
+    local btn = _G[bar .. "Button" .. id]
+    local spellID = GetSpellIdFromButton(btn)
+    local icon = GetViewerIconBySpellId(spellID)
+    if icon then
+        EnableTexture(icon)
+    end
+end)
+
+hooksecurefunc("MultiActionButtonUp", function(bar, id)
+    local btn = _G[bar .. "Button" .. id]
+    local spellID = GetSpellIdFromButton(btn)
+    local icon = GetViewerIconBySpellId(spellID)
+    if icon then
+        DisableTexture(icon)
+    end
+end)
+
