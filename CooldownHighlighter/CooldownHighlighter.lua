@@ -1,6 +1,5 @@
 local viewerTypes = { "EssentialCooldownViewer", "UtilityCooldownViewer" }
 local function GetViewerIconBySpellId(spellID)
-    print(spellID)
     if not spellID then return nil end
 
     for _, viewerName in ipairs(viewerTypes) do
