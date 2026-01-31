@@ -46,9 +46,51 @@ local function GetSpellIdFromButton(btn)
     return nil
 end
 
+local function CreateOrGetTextureFrame(icon)
+    if icon.HighlightTexture then
+        return icon.HighlightTexture
+    end
+
+    local frame = CreateFrame("Frame", nil, icon, "BackdropTemplate")
+    frame:SetFrameLevel(icon:GetFrameLevel() + 10)
+    frame:SetAllPoints(icon)
+
+    local tex = frame:CreateTexture(nil, "OVERLAY")
+    tex:SetAllPoints(frame)
+    tex:SetAtlas("UI-HUD-ActionBar-IconFrame-Down", true)
+
+    frame.texture = tex
+    frame:Hide()
+
+    icon.HighlightTexture = frame
+    return frame
+end
+
+local function EnableTexture(icon)
+    local iconFrame = CreateOrGetTextureFrame(icon)
+    iconFrame:Show()
+end
+
+local function DisableTexture(icon)
+    local iconFrame = CreateOrGetTextureFrame(icon)
+    iconFrame:Hide()
+end
+
 hooksecurefunc("ActionButtonDown", function(id)
     local btn = _G["ActionButton" .. id]
     local spellID = GetSpellIdFromButton(btn)
     local icon = GetViewerIconBySpellId(spellID)
-    print(icon)
+    if icon then
+        EnableTexture(icon)
+    end
 end)
+
+hooksecurefunc("ActionButtonUp", function(id)
+    local btn = _G["ActionButton" .. id]
+    local spellID = GetSpellIdFromButton(btn)
+    local icon = GetViewerIconBySpellId(spellID)
+    if icon then
+        DisableTexture(icon)
+    end
+end)
+
