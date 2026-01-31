@@ -1,4 +1,4 @@
-# Owens CDM Highlighter
+# Cooldown Highlighter
 
 A small World of Warcraft Addon that translates the spell highlight from the action bars to the new Cooldown Manager.
 
