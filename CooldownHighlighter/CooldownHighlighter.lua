@@ -1,3 +1,26 @@
+local function CreateSpellIDCollection(spellID)
+    if not spellID then return nil end
+
+    local collection = {}
+    collection[spellID] = true
+
+    local overrideSpell = C_Spell.GetOverrideSpell(spellID)
+    local baseSpell = C_Spell.GetBaseSpell(spellID)
+
+    if overrideSpell then collection[overrideSpell] = true end
+    if baseSpell then collection[baseSpell] = true end
+    return collection
+end
+
+local function GetSpellIDFromCooldownId(cooldownID)
+    if not cooldownID then return nil end
+
+    local cooldownIDInfo = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
+    if cooldownIDInfo.spellID then
+        return cooldownIDInfo.spellID
+    end
+end
+
 local viewerTypes = { "EssentialCooldownViewer", "UtilityCooldownViewer", "CDMGroups_Essential", "CDMGroups_Utility" }
 local function GetViewerIconBySpellId(spellID)
     if not spellID then return nil end
@@ -5,14 +28,16 @@ local function GetViewerIconBySpellId(spellID)
     for _, viewerName in ipairs(viewerTypes) do
         local viewerFrame = _G[viewerName]
         if viewerFrame then
+            local spellIDCollection = CreateSpellIDCollection(spellID)
+
             local cooldownIcons = {viewerFrame:GetChildren()}
             for _, icon in ipairs(cooldownIcons) do
-                if icon.Icon and icon.cooldownID then
+                if icon.Icon and icon.GetSpellID and icon.cooldownID then
+                    local cooldownIDRelatedSpellID = GetSpellIDFromCooldownId(icon.cooldownID)
+                    local iconSpellID = icon:GetSpellID()
 
-                    if icon.GetSpellID then
-                        local spellIDFromIcon = icon:GetSpellID()
-
-                        if spellIDFromIcon == spellID then
+                    if cooldownIDRelatedSpellID then
+                        if spellIDCollection[cooldownIDRelatedSpellID] or spellIDCollection[iconSpellID] then
                             return icon
                         end
                     end
