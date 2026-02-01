@@ -1,4 +1,4 @@
-local viewerTypes = { "EssentialCooldownViewer", "UtilityCooldownViewer" }
+local viewerTypes = { "EssentialCooldownViewer", "UtilityCooldownViewer", "CDMGroups_Essential", "CDMGroups_Utility" }
 local function GetViewerIconBySpellId(spellID)
     if not spellID then return nil end
 
