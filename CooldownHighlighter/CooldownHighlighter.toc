@@ -3,6 +3,5 @@
 ## Notes: Syncing Buttonpress Glow to the CDM
 ## Author: Owenwilson-Sylvanas
 ## Version: 1.0.0
-## SavedVariables: CooldownHighlighterDB
 
 CooldownHighlighter.lua
