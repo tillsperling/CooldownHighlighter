@@ -32,13 +32,28 @@ local function GetViewerIconBySpellId(spellID)
 
             local cooldownIcons = {viewerFrame:GetChildren()}
             for _, icon in ipairs(cooldownIcons) do
-                if icon.Icon and icon.GetSpellID and icon.cooldownID then
+                if icon.Icon and icon.cooldownID then
                     local cooldownIDRelatedSpellID = GetSpellIDFromCooldownId(icon.cooldownID)
-                    local iconSpellID = icon:GetSpellID()
 
-                    if cooldownIDRelatedSpellID then
-                        if spellIDCollection[cooldownIDRelatedSpellID] or spellIDCollection[iconSpellID] then
-                            return icon
+                    if type(cooldownIDRelatedSpellID) == "number" and spellIDCollection[cooldownIDRelatedSpellID] then
+                        return icon
+                    end
+
+                    if icon.GetSpellID then
+
+                        -- pcall is returning boolean and the result of the handed function --
+                        local isGetSpellIDSafe, iconSpellID = pcall(icon.GetSpellID, icon)
+
+                        if isGetSpellIDSafe and iconSpellID ~= nil then
+
+                            -- checking if indexing the sometimes secret getSpellID works before checking on it --
+                            local isGetSpellIDIndexable, isSpellIdInCollection = pcall(function()
+                                return spellIDCollection[iconSpellID]
+                            end)
+
+                            if isGetSpellIDIndexable and isSpellIdInCollection then
+                                return icon
+                            end
                         end
                     end
                 end

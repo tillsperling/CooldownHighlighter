@@ -1,6 +1,6 @@
 ## Interface: 120000, 120001
 ## Title: Cooldown Highlighter
-## Notes: Syncing Buttonpress Glow to the CDM
+## Notes: Syncing Buttonpress Highlight to the CDM
 ## Author: Owenwilson-Sylvanas
 ## Version: 1.0.0
 
