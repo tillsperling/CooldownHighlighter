@@ -115,6 +115,42 @@ local function DisableTexture(icon)
     iconFrame:Hide()
 end
 
+local function OnLABButtonPress(btn)
+    local spellID = GetSpellIdFromButton(btn)
+    local icon = GetViewerIconBySpellId(spellID)
+    btn.isCDMHighlightVisible = not btn.isCDMHighlightVisible
+
+    if btn.isCDMHighlightVisible then
+        EnableTexture(icon)
+    else
+        DisableTexture(icon)
+    end
+end
+
+local function HookCooldownHighlighterToLABButton(button)
+    button:HookScript("PreClick", function(self)
+        OnLABButtonPress(self)
+    end)
+end
+
+local LAB = LibStub and LibStub("LibActionButton-1.0", true)
+
+local f = CreateFrame("Frame")
+f:RegisterEvent("PLAYER_LOGIN")
+f:SetScript("OnEvent", function()
+    if not LAB or not LAB.GetAllButtons then
+        return
+    end
+
+    local allButtons = LAB.activeButtons
+    for button in pairs(allButtons) do
+        if not button.IsCooldownHighlighterHooked then
+            HookCooldownHighlighterToLABButton(button)
+            button.IsCooldownHighlighterHooked = true
+        end
+    end
+end)
+
 hooksecurefunc("ActionButtonDown", function(id)
     local btn = _G["ActionButton" .. id]
     local spellID = GetSpellIdFromButton(btn)
