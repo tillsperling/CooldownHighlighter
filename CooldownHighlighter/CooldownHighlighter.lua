@@ -86,6 +86,7 @@ local function GetSpellIdFromButton(btn)
 end
 
 local function CreateOrGetTextureFrame(icon)
+    if not icon then return nil end
     if icon.HighlightTexture then
         return icon.HighlightTexture
     end
@@ -120,6 +121,10 @@ local function OnLABButtonPress(btn)
     local icon = GetViewerIconBySpellId(spellID)
     btn.isCDMHighlightVisible = not btn.isCDMHighlightVisible
 
+    if not icon then
+        return
+    end
+
     if btn.isCDMHighlightVisible then
         EnableTexture(icon)
     else
@@ -127,28 +132,52 @@ local function OnLABButtonPress(btn)
     end
 end
 
+local function DisableTextureOnLeave(btn)
+    -- this call fixes a bug that occurs when the mouse is used to drag an icon --
+    local spellID = GetSpellIdFromButton(btn)
+    local icon = GetViewerIconBySpellId(spellID)
+    if not icon then
+        return
+    end
+    DisableTexture(icon)
+end
+
 local function HookCooldownHighlighterToLABButton(button)
     button:HookScript("PreClick", function(self)
         OnLABButtonPress(self)
+    end)
+
+    button:HookScript("OnLeave", function(self)
+        DisableTextureOnLeave(self)
     end)
 end
 
 local LAB = LibStub and LibStub("LibActionButton-1.0", true)
 
-local f = CreateFrame("Frame")
-f:RegisterEvent("PLAYER_LOGIN")
-f:SetScript("OnEvent", function()
+local function HookAllLABButtons()
     if not LAB or not LAB.GetAllButtons then
         return
     end
 
     local allButtons = LAB.activeButtons
+    if not allButtons then
+        return
+    end
+
     for button in pairs(allButtons) do
         if not button.IsCooldownHighlighterHooked then
             HookCooldownHighlighterToLABButton(button)
             button.IsCooldownHighlighterHooked = true
         end
     end
+end
+
+local LABFrame = CreateFrame("Frame")
+LABFrame:RegisterEvent("PLAYER_LOGIN")
+LABFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+LABFrame:SetScript("OnEvent", function()
+    -- rehooking all the buttons on LAB Events, unsure how often that happens doesnt seem often --
+    HookAllLABButtons()
 end)
 
 hooksecurefunc("ActionButtonDown", function(id)
