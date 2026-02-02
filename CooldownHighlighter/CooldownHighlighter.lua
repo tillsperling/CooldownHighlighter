@@ -116,39 +116,24 @@ local function DisableTexture(icon)
     iconFrame:Hide()
 end
 
-local function OnLABButtonPress(btn)
+local function OnLABButtonPress(btn, key, isDown)
     local spellID = GetSpellIdFromButton(btn)
     local icon = GetViewerIconBySpellId(spellID)
-    btn.isCDMHighlightVisible = not btn.isCDMHighlightVisible
 
     if not icon then
         return
     end
 
-    if btn.isCDMHighlightVisible then
+    if key ~= "LeftButton" and key ~= "RightButton" and isDown == true then
         EnableTexture(icon)
-    else
+    elseif key ~= "LeftButton" and key ~= "RightButton" and isDown == false then
         DisableTexture(icon)
     end
 end
 
-local function DisableTextureOnLeave(btn)
-    -- this call fixes a bug that occurs when the mouse is used to drag an icon --
-    local spellID = GetSpellIdFromButton(btn)
-    local icon = GetViewerIconBySpellId(spellID)
-    if not icon then
-        return
-    end
-    DisableTexture(icon)
-end
-
 local function HookCooldownHighlighterToLABButton(button)
-    button:HookScript("PreClick", function(self)
-        OnLABButtonPress(self)
-    end)
-
-    button:HookScript("OnLeave", function(self)
-        DisableTextureOnLeave(self)
+    button:HookScript("PreClick", function(self, mouseButton, down)
+        OnLABButtonPress(self, mouseButton, down)
     end)
 end
 
