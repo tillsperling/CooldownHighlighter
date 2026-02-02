@@ -1,3 +1,5 @@
+local LAB = LibStub and LibStub("LibActionButton-1.0", true)
+
 local function CreateSpellIDCollection(spellID)
     if not spellID then return nil end
 
@@ -116,7 +118,7 @@ local function DisableTexture(icon)
     iconFrame:Hide()
 end
 
-local function OnLABButtonPress(btn, key, isDown)
+local function OnThirdPartyButtonPress(btn, key, isDown)
     local spellID = GetSpellIdFromButton(btn)
     local icon = GetViewerIconBySpellId(spellID)
 
@@ -133,11 +135,20 @@ end
 
 local function HookCooldownHighlighterToLABButton(button)
     button:HookScript("PreClick", function(self, mouseButton, down)
-        OnLABButtonPress(self, mouseButton, down)
+        OnThirdPartyButtonPress(self, mouseButton, down)
     end)
 end
 
-local LAB = LibStub and LibStub("LibActionButton-1.0", true)
+local function HookCooldownHighlighterToDominosButton(button)
+    local function handle(self, mouseButton, down)
+        OnThirdPartyButtonPress(button, mouseButton, down)
+    end
+
+    if button.bind and not button.IsCooldownHighlighter_BindHooked then
+        button.bind:HookScript("PreClick", handle)
+        button.IsCooldownHighlighter_BindHooked = true
+    end
+end
 
 local function HookAllLABButtons()
     if not LAB or not LAB.GetAllButtons then
@@ -157,12 +168,51 @@ local function HookAllLABButtons()
     end
 end
 
+local function HookAllDominosButtons()
+    local Dominos = _G.Dominos
+
+    Dominos.RegisterCallback(Dominos, "LAYOUT_LOADED", function()
+        for button in Dominos.ActionButtons:GetAll() do
+            if not button.IsCooldownHighlighterHooked then
+                HookCooldownHighlighterToDominosButton(button)
+                button.IsCooldownHighlighterHooked = true
+            end
+        end
+    end)
+end
+
+local function OnLABButtonUpdate()
+    -- rehookin buttons if we got a update --
+    HookAllLABButtons()
+end
+
+local function RegisterLABCallbacks()
+    if LAB.__CooldownHighlighter_OnButtonUpdateRegistered then return end
+    LAB.__CooldownHighlighter_OnButtonUpdateRegistered = true
+
+    LAB:RegisterCallback("OnButtonUpdate", OnLABButtonUpdate)
+end
+
 local LABFrame = CreateFrame("Frame")
 LABFrame:RegisterEvent("PLAYER_LOGIN")
 LABFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 LABFrame:SetScript("OnEvent", function()
-    -- rehooking all the buttons on LAB Events, unsure how often that happens doesnt seem often --
+    if not LAB then
+        return
+    end
+    RegisterLABCallbacks()
+    -- initial button hooking for LAB --
     HookAllLABButtons()
+end)
+
+local DominosFrame = CreateFrame("Frame")
+DominosFrame:RegisterEvent("PLAYER_LOGIN")
+DominosFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+DominosFrame:RegisterEvent("ADDON_LOADED")
+DominosFrame:SetScript("OnEvent", function(self, event, argument)
+    if event == "ADDON_LOADED" and argument == "Dominos" then
+        HookAllDominosButtons()
+    end
 end)
 
 hooksecurefunc("ActionButtonDown", function(id)
