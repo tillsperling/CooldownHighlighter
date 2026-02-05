@@ -87,7 +87,7 @@ local function GetSpellIdFromButton(btn)
     return nil
 end
 
-local function CreateOrGetTextureFrame(icon)
+local function CreateOrGetTextureFrame(icon, isElvUI)
     if not icon then return nil end
     if icon.HighlightTexture then
         return icon.HighlightTexture
@@ -99,7 +99,17 @@ local function CreateOrGetTextureFrame(icon)
 
     local tex = frame:CreateTexture(nil, "OVERLAY")
     tex:SetAllPoints(frame)
-    tex:SetAtlas("UI-HUD-ActionBar-IconFrame-Down", true)
+
+    if isElvUI then
+        local E = _G.ElvUI[1]
+        tex:SetTexture(E.media.blankTex)
+        tex:SetBlendMode("ADD")
+        tex:SetColorTexture(0.9, 0.8, 0.1, 0.3)
+        if frame.SetInside then tex:SetInside() end
+    else
+        tex:SetAtlas("UI-HUD-ActionBar-IconFrame-Down", true)
+    end
+
 
     frame.texture = tex
     frame:Hide()
@@ -109,12 +119,22 @@ local function CreateOrGetTextureFrame(icon)
 end
 
 local function EnableTexture(icon)
-    local iconFrame = CreateOrGetTextureFrame(icon)
+    local iconFrame = CreateOrGetTextureFrame(icon, false)
     iconFrame:Show()
 end
 
 local function DisableTexture(icon)
-    local iconFrame = CreateOrGetTextureFrame(icon)
+    local iconFrame = CreateOrGetTextureFrame(icon, false)
+    iconFrame:Hide()
+end
+
+local function EnableElvUITexture(icon)
+    local iconFrame = CreateOrGetTextureFrame(icon, true)
+    iconFrame:Show()
+end
+
+local function DisableElvUITexture(icon)
+    local iconFrame = CreateOrGetTextureFrame(icon, true)
     iconFrame:Hide()
 end
 
@@ -133,9 +153,30 @@ local function OnThirdPartyButtonPress(btn, key, isDown)
     end
 end
 
+local function OnElvUIButtonPress(btn, key, isDown)
+    local spellID = GetSpellIdFromButton(btn)
+    local icon = GetViewerIconBySpellId(spellID)
+
+    if not icon then
+        return
+    end
+
+    if isDown == true then
+        EnableElvUITexture(icon)
+    elseif isDown == false then
+        DisableElvUITexture(icon)
+    end
+end
+
 local function HookCooldownHighlighterToLABButton(button)
     button:HookScript("PreClick", function(self, mouseButton, down)
         OnThirdPartyButtonPress(self, mouseButton, down)
+    end)
+end
+
+local function HookCooldownHighlighterToElvUIButton(button)
+    button:HookScript("PreClick", function(self, mouseButton, down)
+        OnElvUIButtonPress(self, mouseButton, down)
     end)
 end
 
@@ -181,9 +222,16 @@ local function HookAllDominosButtons()
     end)
 end
 
-local function OnLABButtonUpdate()
-    -- rehookin buttons if we got a update --
-    HookAllLABButtons()
+local function OnLABButtonUpdate(event, button)
+    if not button or button.IsCooldownHighlighterHooked then return end
+    HookCooldownHighlighterToLABButton(button)
+    button.IsCooldownHighlighterHooked = true
+end
+
+local function OnElvUIButtonUpdate(event, button)
+    if not button or button.IsCooldownHighlighterHooked then return end
+    HookCooldownHighlighterToElvUIButton(button)
+    button.IsCooldownHighlighterHooked = true
 end
 
 local function RegisterLABCallbacks()
@@ -191,6 +239,17 @@ local function RegisterLABCallbacks()
     LAB.__CooldownHighlighter_OnButtonUpdateRegistered = true
 
     LAB:RegisterCallback("OnButtonUpdate", OnLABButtonUpdate)
+end
+
+local function RegisterElvUICallbacks()
+    local ElvUI = _G.ElvUI and _G.ElvUI[1]
+    if not ElvUI then return end
+
+    local ElvUILibActionButtons = ElvUI.Libs and ElvUI.Libs.LAB
+    if not ElvUILibActionButtons then return end
+
+    ElvUILibActionButtons:RegisterCallback("OnButtonUpdate", OnElvUIButtonUpdate)
+
 end
 
 local LABFrame = CreateFrame("Frame")
@@ -212,6 +271,16 @@ DominosFrame:RegisterEvent("ADDON_LOADED")
 DominosFrame:SetScript("OnEvent", function(self, event, argument)
     if event == "ADDON_LOADED" and argument == "Dominos" then
         HookAllDominosButtons()
+    end
+end)
+
+local ElvUIFrame = CreateFrame("Frame")
+ElvUIFrame:RegisterEvent("PLAYER_LOGIN")
+ElvUIFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+ElvUIFrame:RegisterEvent("ADDON_LOADED")
+ElvUIFrame:SetScript("OnEvent", function(self, event, argument)
+    if event == "ADDON_LOADED" and argument == "ElvUI" then
+        RegisterElvUICallbacks()
     end
 end)
 
