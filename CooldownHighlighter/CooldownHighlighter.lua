@@ -103,7 +103,8 @@ end
 function CH:ToggleHighlight(icon, show, style)
     if not icon then return end
     local textureFrame = self:CreateOrGetTextureFrame(icon, style)
-    if show then textureFrame:Show() else textureFrame.Hide() end
+    print('debug')
+    if show then textureFrame:Show() else textureFrame:Hide() end
 end
 
 function CH:ButtonPress(button, mouseButton, isDown, style)
@@ -230,6 +231,7 @@ function CH:HandleDefaultButton(btn, isDown)
     local spellID = CH:GetSpellIdFromButton(btn)
     local icon = CH:GetViewerIconBySpellId(spellID)
     if icon then
+        print('calling toggle with', icon, isDown)
         CH:ToggleHighlight(icon, isDown)
     end
 end
