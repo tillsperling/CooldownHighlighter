@@ -114,10 +114,10 @@ function CH:ButtonPress(button, mouseButton, isDown, style)
     if not icon then return end
 
     if style == "ElvUI" then
-        self:SetHighlight(icon, isDown == true, style)
+        self:ToggleHighlight(icon, isDown == true, style)
     else
         if mouseButton ~= "LeftButton" and mouseButton ~= "RightButton" then
-            self:SetHighlight(icon, isDown == true, nil)
+            self:ToggleHighlight(icon, isDown == true, nil)
         end
     end
 end
@@ -230,7 +230,7 @@ function CH:HandleDefaultButton(btn, isDown)
     local spellID = CH:GetSpellIdFromButton(btn)
     local icon = CH:GetViewerIconBySpellId(spellID)
     if icon then
-        CH:SetHighlight(icon, isDown)
+        CH:ToggleHighlight(icon, isDown)
     end
 end
 
