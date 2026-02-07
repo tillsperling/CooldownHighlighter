@@ -69,6 +69,37 @@ function CH:GetViewerIconBySpellId(spellID)
     return nil
 end
 
+local function CreateOrGetTextureFrame(icon, isElvUI)
+    if not icon then return nil end
+    if icon.HighlightTexture then
+        return icon.HighlightTexture
+    end
+
+    local frame = CreateFrame("Frame", nil, icon, "BackdropTemplate")
+    frame:SetFrameLevel(icon:GetFrameLevel() + 10)
+    frame:SetAllPoints(icon)
+
+    local tex = frame:CreateTexture(nil, "OVERLAY")
+    tex:SetAllPoints(frame)
+
+    if isElvUI then
+        local ElvUI = _G.ElvUI[1]
+        tex:SetTexture(ElvUI.media.blankTex)
+        tex:SetBlendMode("ADD")
+        tex:SetColorTexture(0.9, 0.8, 0.1, 0.3)
+        if frame.SetInside then tex:SetInside() end
+    else
+        tex:SetAtlas("UI-HUD-ActionBar-IconFrame-Down", true)
+    end
+
+
+    frame.texture = tex
+    frame:Hide()
+
+    icon.HighlightTexture = frame
+    return frame
+end
+
 local function GetSpellIdFromMacroName(macroName)
     if not macroName then return nil end
 
@@ -90,37 +121,6 @@ local function GetSpellIdFromButton(btn)
         return GetSpellIdFromMacroName(macroName)
     end
     return nil
-end
-
-local function CreateOrGetTextureFrame(icon, isElvUI)
-    if not icon then return nil end
-    if icon.HighlightTexture then
-        return icon.HighlightTexture
-    end
-
-    local frame = CreateFrame("Frame", nil, icon, "BackdropTemplate")
-    frame:SetFrameLevel(icon:GetFrameLevel() + 10)
-    frame:SetAllPoints(icon)
-
-    local tex = frame:CreateTexture(nil, "OVERLAY")
-    tex:SetAllPoints(frame)
-
-    if isElvUI then
-        local E = _G.ElvUI[1]
-        tex:SetTexture(E.media.blankTex)
-        tex:SetBlendMode("ADD")
-        tex:SetColorTexture(0.9, 0.8, 0.1, 0.3)
-        if frame.SetInside then tex:SetInside() end
-    else
-        tex:SetAtlas("UI-HUD-ActionBar-IconFrame-Down", true)
-    end
-
-
-    frame.texture = tex
-    frame:Hide()
-
-    icon.HighlightTexture = frame
-    return frame
 end
 
 local function EnableTexture(icon)
