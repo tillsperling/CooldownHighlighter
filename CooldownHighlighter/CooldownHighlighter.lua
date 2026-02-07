@@ -138,9 +138,9 @@ local function OnThirdPartyButtonPress(btn, key, isDown)
     end
 
     if key ~= "LeftButton" and key ~= "RightButton" and isDown == true then
-        EnableTexture(icon)
+        self:ToggleHighlight(icon, true)
     elseif key ~= "LeftButton" and key ~= "RightButton" and isDown == false then
-        DisableTexture(icon)
+        self:ToggleHighlight(icon, false)
     end
 end
 
@@ -153,9 +153,9 @@ local function OnElvUIButtonPress(btn, key, isDown)
     end
 
     if isDown == true then
-        EnableElvUITexture(icon)
+        self:ToggleHighlight(icon, true, 'ElvUI')
     elseif isDown == false then
-        DisableElvUITexture(icon)
+        self:ToggleHighlight(icon, false, 'ElvUI')
     end
 end
 
@@ -280,7 +280,7 @@ hooksecurefunc("ActionButtonDown", function(id)
     local spellID = GetSpellIdFromButton(btn)
     local icon = self:GetViewerIconBySpellId(spellID)
     if icon then
-        EnableTexture(icon)
+        self:ToggleHighlight(icon, true)
     end
 end)
 
@@ -289,7 +289,7 @@ hooksecurefunc("ActionButtonUp", function(id)
     local spellID = GetSpellIdFromButton(btn)
     local icon = self:GetViewerIconBySpellId(spellID)
     if icon then
-        DisableTexture(icon)
+        self:ToggleHighlight(icon, false)
     end
 end)
 
@@ -298,7 +298,7 @@ hooksecurefunc("MultiActionButtonDown", function(bar, id)
     local spellID = GetSpellIdFromButton(btn)
     local icon = self:GetViewerIconBySpellId(spellID)
     if icon then
-        EnableTexture(icon)
+        self:ToggleHighlight(icon, true)
     end
 end)
 
@@ -307,7 +307,7 @@ hooksecurefunc("MultiActionButtonUp", function(bar, id)
     local spellID = GetSpellIdFromButton(btn)
     local icon = GetViewerIconBySpellId(spellID)
     if icon then
-        DisableTexture(icon)
+        self:ToggleHighlight(icon, false)
     end
 end)
 
