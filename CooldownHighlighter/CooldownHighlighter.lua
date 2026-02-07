@@ -69,7 +69,7 @@ function CH:GetViewerIconBySpellId(spellID)
     return nil
 end
 
-local function CreateOrGetTextureFrame(icon, isElvUI)
+function CH:CreateOrGetTextureFrame(icon, style)
     if not icon then return nil end
     if icon.HighlightTexture then
         return icon.HighlightTexture
@@ -82,7 +82,7 @@ local function CreateOrGetTextureFrame(icon, isElvUI)
     local tex = frame:CreateTexture(nil, "OVERLAY")
     tex:SetAllPoints(frame)
 
-    if isElvUI then
+    if style == "ElvUI" then
         local ElvUI = _G.ElvUI[1]
         tex:SetTexture(ElvUI.media.blankTex)
         tex:SetBlendMode("ADD")
@@ -98,6 +98,12 @@ local function CreateOrGetTextureFrame(icon, isElvUI)
 
     icon.HighlightTexture = frame
     return frame
+end
+
+function CH:ToggleHighlight(icon, show, style)
+    if not icon then return end
+    local textureFrame = self:CreateOrGetTextureFrame(icon, style)
+    if show then textureFrame:Show() else textureFrame.Hide()
 end
 
 local function GetSpellIdFromMacroName(macroName)
@@ -123,29 +129,9 @@ local function GetSpellIdFromButton(btn)
     return nil
 end
 
-local function EnableTexture(icon)
-    local iconFrame = CreateOrGetTextureFrame(icon, false)
-    iconFrame:Show()
-end
-
-local function DisableTexture(icon)
-    local iconFrame = CreateOrGetTextureFrame(icon, false)
-    iconFrame:Hide()
-end
-
-local function EnableElvUITexture(icon)
-    local iconFrame = CreateOrGetTextureFrame(icon, true)
-    iconFrame:Show()
-end
-
-local function DisableElvUITexture(icon)
-    local iconFrame = CreateOrGetTextureFrame(icon, true)
-    iconFrame:Hide()
-end
-
 local function OnThirdPartyButtonPress(btn, key, isDown)
     local spellID = GetSpellIdFromButton(btn)
-    local icon = CH.GetViewerIconBySpellId(spellID)
+    local icon = self:GetViewerIconBySpellId(spellID)
 
     if not icon then
         return
@@ -160,7 +146,7 @@ end
 
 local function OnElvUIButtonPress(btn, key, isDown)
     local spellID = GetSpellIdFromButton(btn)
-    local icon = CH.GetViewerIconBySpellId(spellID)
+    local icon = self:GetViewerIconBySpellId(spellID)
 
     if not icon then
         return
@@ -292,7 +278,7 @@ end)
 hooksecurefunc("ActionButtonDown", function(id)
     local btn = _G["ActionButton" .. id]
     local spellID = GetSpellIdFromButton(btn)
-    local icon = CH.GetViewerIconBySpellId(spellID)
+    local icon = self:GetViewerIconBySpellId(spellID)
     if icon then
         EnableTexture(icon)
     end
@@ -301,7 +287,7 @@ end)
 hooksecurefunc("ActionButtonUp", function(id)
     local btn = _G["ActionButton" .. id]
     local spellID = GetSpellIdFromButton(btn)
-    local icon = CH.GetViewerIconBySpellId(spellID)
+    local icon = self:GetViewerIconBySpellId(spellID)
     if icon then
         DisableTexture(icon)
     end
@@ -310,7 +296,7 @@ end)
 hooksecurefunc("MultiActionButtonDown", function(bar, id)
     local btn = _G[bar .. "Button" .. id]
     local spellID = GetSpellIdFromButton(btn)
-    local icon = CH.GetViewerIconBySpellId(spellID)
+    local icon = self:GetViewerIconBySpellId(spellID)
     if icon then
         EnableTexture(icon)
     end
