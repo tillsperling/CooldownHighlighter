@@ -66,6 +66,7 @@ function CH:GetViewerIconBySpellId(spellID)
             end
         end
     end
+    return nil
 end
 
 local function GetSpellIdFromMacroName(macroName)
