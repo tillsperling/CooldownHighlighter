@@ -1,4 +1,7 @@
+local CH = {}
+
 local LAB = LibStub and LibStub("LibActionButton-1.0", true)
+local viewerTypes = { "EssentialCooldownViewer", "UtilityCooldownViewer", "CDMGroups_Essential", "CDMGroups_Utility" }
 
 local function CreateSpellIDCollection(spellID)
     if not spellID then return nil end
@@ -23,14 +26,15 @@ local function GetSpellIDFromCooldownId(cooldownID)
     end
 end
 
-local viewerTypes = { "EssentialCooldownViewer", "UtilityCooldownViewer", "CDMGroups_Essential", "CDMGroups_Utility" }
-local function GetViewerIconBySpellId(spellID)
+function CH:GetViewerIconBySpellId(spellID)
     if not spellID then return nil end
+
+    local spellIDCollection = CreateSpellIDCollection(spellID)
+    if not spellIDCollection then return nil end
 
     for _, viewerName in ipairs(viewerTypes) do
         local viewerFrame = _G[viewerName]
         if viewerFrame then
-            local spellIDCollection = CreateSpellIDCollection(spellID)
 
             local cooldownIcons = {viewerFrame:GetChildren()}
             for _, icon in ipairs(cooldownIcons) do
@@ -140,7 +144,7 @@ end
 
 local function OnThirdPartyButtonPress(btn, key, isDown)
     local spellID = GetSpellIdFromButton(btn)
-    local icon = GetViewerIconBySpellId(spellID)
+    local icon = CH.GetViewerIconBySpellId(spellID)
 
     if not icon then
         return
@@ -155,7 +159,7 @@ end
 
 local function OnElvUIButtonPress(btn, key, isDown)
     local spellID = GetSpellIdFromButton(btn)
-    local icon = GetViewerIconBySpellId(spellID)
+    local icon = CH.GetViewerIconBySpellId(spellID)
 
     if not icon then
         return
@@ -287,7 +291,7 @@ end)
 hooksecurefunc("ActionButtonDown", function(id)
     local btn = _G["ActionButton" .. id]
     local spellID = GetSpellIdFromButton(btn)
-    local icon = GetViewerIconBySpellId(spellID)
+    local icon = CH.GetViewerIconBySpellId(spellID)
     if icon then
         EnableTexture(icon)
     end
@@ -296,7 +300,7 @@ end)
 hooksecurefunc("ActionButtonUp", function(id)
     local btn = _G["ActionButton" .. id]
     local spellID = GetSpellIdFromButton(btn)
-    local icon = GetViewerIconBySpellId(spellID)
+    local icon = CH.GetViewerIconBySpellId(spellID)
     if icon then
         DisableTexture(icon)
     end
@@ -305,7 +309,7 @@ end)
 hooksecurefunc("MultiActionButtonDown", function(bar, id)
     local btn = _G[bar .. "Button" .. id]
     local spellID = GetSpellIdFromButton(btn)
-    local icon = GetViewerIconBySpellId(spellID)
+    local icon = CH.GetViewerIconBySpellId(spellID)
     if icon then
         EnableTexture(icon)
     end
