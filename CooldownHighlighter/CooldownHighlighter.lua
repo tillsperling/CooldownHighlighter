@@ -125,7 +125,7 @@ end
 function CH:GetSpellIdFromButton(button)
     if not button or not button.action then return nil end
 
-    local abilityType, id, subType = GetActionInfo(button.action)
+    local abilityType, id, _ = GetActionInfo(button.action)
 
     if abilityType == "spell" then
         return id
