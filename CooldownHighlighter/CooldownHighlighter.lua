@@ -103,211 +103,149 @@ end
 function CH:ToggleHighlight(icon, show, style)
     if not icon then return end
     local textureFrame = self:CreateOrGetTextureFrame(icon, style)
-    if show then textureFrame:Show() else textureFrame.Hide()
+    if show then textureFrame:Show() else textureFrame.Hide() end
 end
 
-local function GetSpellIdFromMacroName(macroName)
-    if not macroName then return nil end
+function CH:ButtonPress(button, mouseButton, isDown, style)
+    local spellID = GetSpellIdFromButton(button)
+    if not spellID then return end
 
-    local macroSpellID = GetMacroSpell(macroName)
+    local icon = self:GetViewerIconBySpellId(spellID)
+    if not icon then return end
 
-    if macroSpellID then return macroSpellID
+    if style == "ElvUI" then
+        self:SetHighlight(icon, isDown == true, style)
+    else
+        if mouseButton ~= "LeftButton" and mouseButton ~= "RightButton" then
+            self:SetHighlight(icon, isDown == true, nil)
+        end
     end
 end
 
-local function GetSpellIdFromButton(btn)
-    if not btn or not btn.action then return nil end
+function CH:GetSpellIdFromButton(button)
+    if not button or not button.action then return nil end
 
-    local abilityType, id, subType = GetActionInfo(btn.action)
+    local abilityType, id, subType = GetActionInfo(button.action)
 
     if abilityType == "spell" then
         return id
     elseif abilityType == "macro" then
-        local macroName = GetActionText(btn.action)
+        local macroName = GetActionText(button.action)
         return GetSpellIdFromMacroName(macroName)
     end
     return nil
 end
 
-local function OnThirdPartyButtonPress(btn, key, isDown)
-    local spellID = GetSpellIdFromButton(btn)
-    local icon = self:GetViewerIconBySpellId(spellID)
-
-    if not icon then
-        return
-    end
-
-    if key ~= "LeftButton" and key ~= "RightButton" and isDown == true then
-        self:ToggleHighlight(icon, true)
-    elseif key ~= "LeftButton" and key ~= "RightButton" and isDown == false then
-        self:ToggleHighlight(icon, false)
-    end
+function CH:GetSpellIdFromMacroName(macroName)
+    if not macroName then return nil end
+    local macroSpellID = GetMacroSpell(macroName)
+    return macroSpellID or nil
 end
 
-local function OnElvUIButtonPress(btn, key, isDown)
-    local spellID = GetSpellIdFromButton(btn)
-    local icon = self:GetViewerIconBySpellId(spellID)
-
-    if not icon then
-        return
-    end
-
-    if isDown == true then
-        self:ToggleHighlight(icon, true, 'ElvUI')
-    elseif isDown == false then
-        self:ToggleHighlight(icon, false, 'ElvUI')
-    end
-end
-
-local function HookCooldownHighlighterToLABButton(button)
+function CH:HookCHToPreClick(button, style)
     button:HookScript("PreClick", function(self, mouseButton, down)
-        OnThirdPartyButtonPress(self, mouseButton, down)
+        CH:ButtonPress(self, mouseButton, down, style)
     end)
+    button.IsCooldownHighlighterHooked = true
 end
 
-local function HookCooldownHighlighterToElvUIButton(button)
-    button:HookScript("PreClick", function(self, mouseButton, down)
-        OnElvUIButtonPress(self, mouseButton, down)
-    end)
-end
-
-local function HookCooldownHighlighterToDominosButton(button)
-    local function handle(self, mouseButton, down)
-        OnThirdPartyButtonPress(button, mouseButton, down)
+function CH:HookDominosButton(button)
+    if not button then return end
+    local function handler(_, mouseButton, down)
+        CH:OnButtonPress(button, mouseButton, down, nil)
     end
-
     if button.bind and not button.IsCooldownHighlighter_BindHooked then
-        button.bind:HookScript("PreClick", handle)
+        button.bind:HookScript("PreClick", handler)
         button.IsCooldownHighlighter_BindHooked = true
     end
+    if not button.IsCooldownHighlighterHooked then
+        self:HookButton_PreClick(button, nil)
+    end
 end
 
-local function HookAllLABButtons()
-    if not LAB or not LAB.GetAllButtons then
-        return
-    end
+function CH:HookAllLABButtons()
+    if not LAB or not LAB.activeButtons then return end
 
-    local allButtons = LAB.activeButtons
-    if not allButtons then
-        return
-    end
-
-    for button in pairs(allButtons) do
+    for button in pairs(LAB.activeButtons) do
         if not button.IsCooldownHighlighterHooked then
-            HookCooldownHighlighterToLABButton(button)
-            button.IsCooldownHighlighterHooked = true
+            self:HookCHToPreClick(button, nil)
         end
     end
 end
 
-local function HookAllDominosButtons()
-    local Dominos = _G.Dominos
-
-    Dominos.RegisterCallback(Dominos, "LAYOUT_LOADED", function()
-        for button in Dominos.ActionButtons:GetAll() do
-            if not button.IsCooldownHighlighterHooked then
-                HookCooldownHighlighterToDominosButton(button)
-                button.IsCooldownHighlighterHooked = true
-            end
-        end
-    end)
-end
-
-local function OnLABButtonUpdate(event, button)
-    if not button or button.IsCooldownHighlighterHooked then return end
-    HookCooldownHighlighterToLABButton(button)
-    button.IsCooldownHighlighterHooked = true
-end
-
-local function OnElvUIButtonUpdate(event, button)
-    if not button or button.IsCooldownHighlighterHooked then return end
-    HookCooldownHighlighterToElvUIButton(button)
-    button.IsCooldownHighlighterHooked = true
-end
-
-local function RegisterLABCallbacks()
+function CH:RegisterLABCallbacks()
+    if not LAB then return end
     if LAB.__CooldownHighlighter_OnButtonUpdateRegistered then return end
     LAB.__CooldownHighlighter_OnButtonUpdateRegistered = true
 
-    LAB:RegisterCallback("OnButtonUpdate", OnLABButtonUpdate)
+    LAB:RegisterCallback("OnButtonUpdate", function(_, button)
+        CH:HookButton_PreClick(button, nil)
+    end)
 end
 
-local function RegisterElvUICallbacks()
+function CH:RegisterElvUICallbacks()
     local ElvUI = _G.ElvUI and _G.ElvUI[1]
     if not ElvUI then return end
+    local ElvUILAB = ElvUI.Libs and ElvUI.Libs.LAB
+    if not ElvUILAB then return end
+    ElvUILAB:RegisterCallback("OnButtonUpdate", function(_, button)
+        CH:HookButton_PreClick(button, "ElvUI")
+    end)
+end
 
-    local ElvUILibActionButtons = ElvUI.Libs and ElvUI.Libs.LAB
-    if not ElvUILibActionButtons then return end
-
-    ElvUILibActionButtons:RegisterCallback("OnButtonUpdate", OnElvUIButtonUpdate)
-
+function CH:HookAllDominosButtons()
+    local Dominos = _G.Dominos
+    if not Dominos or not Dominos.ActionButtons or not Dominos.ActionButtons.GetAll then return end
+    Dominos.RegisterCallback(Dominos, "LAYOUT_LOADED", function()
+        for button in Dominos.ActionButtons:GetAll() do
+            CH:HookDominosButton(button)
+        end
+    end)
 end
 
 local LABFrame = CreateFrame("Frame")
-LABFrame:RegisterEvent("PLAYER_LOGIN")
-LABFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 LABFrame:SetScript("OnEvent", function()
-    if not LAB then
-        return
-    end
-    RegisterLABCallbacks()
-    -- initial button hooking for LAB --
-    HookAllLABButtons()
+    if not LAB then return end
+    CH:RegisterLABCallbacks()
+    CH:HookAllLABButtons()
 end)
 
 local DominosFrame = CreateFrame("Frame")
-DominosFrame:RegisterEvent("PLAYER_LOGIN")
-DominosFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 DominosFrame:RegisterEvent("ADDON_LOADED")
-DominosFrame:SetScript("OnEvent", function(self, event, argument)
+DominosFrame:SetScript("OnEvent", function(_, event, argument)
     if event == "ADDON_LOADED" and argument == "Dominos" then
-        HookAllDominosButtons()
+        CH:HookAllDominosButtons()
     end
 end)
 
 local ElvUIFrame = CreateFrame("Frame")
-ElvUIFrame:RegisterEvent("PLAYER_LOGIN")
-ElvUIFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 ElvUIFrame:RegisterEvent("ADDON_LOADED")
-ElvUIFrame:SetScript("OnEvent", function(self, event, argument)
+ElvUIFrame:SetScript("OnEvent", function(_, event, argument)
     if event == "ADDON_LOADED" and argument == "ElvUI" then
-        RegisterElvUICallbacks()
+        CH:RegisterElvUICallbacks()
     end
 end)
 
-hooksecurefunc("ActionButtonDown", function(id)
-    local btn = _G["ActionButton" .. id]
-    local spellID = GetSpellIdFromButton(btn)
-    local icon = self:GetViewerIconBySpellId(spellID)
+function CH:HandleDefaultButton(btn, isDown)
+    local spellID = CH:GetSpellIdFromButton(btn)
+    local icon = CH:GetViewerIconBySpellId(spellID)
     if icon then
-        self:ToggleHighlight(icon, true)
+        CH:SetHighlight(icon, isDown)
     end
+end
+
+hooksecurefunc("ActionButtonDown", function(id)
+    CH:HandleDefaultButton(_G["ActionButton" .. id], true)
 end)
 
 hooksecurefunc("ActionButtonUp", function(id)
-    local btn = _G["ActionButton" .. id]
-    local spellID = GetSpellIdFromButton(btn)
-    local icon = self:GetViewerIconBySpellId(spellID)
-    if icon then
-        self:ToggleHighlight(icon, false)
-    end
+    CH:HandleDefaultButton(_G["ActionButton" .. id], false)
 end)
 
 hooksecurefunc("MultiActionButtonDown", function(bar, id)
-    local btn = _G[bar .. "Button" .. id]
-    local spellID = GetSpellIdFromButton(btn)
-    local icon = self:GetViewerIconBySpellId(spellID)
-    if icon then
-        self:ToggleHighlight(icon, true)
-    end
+    CH:HandleDefaultButton(_G[bar .. "Button" .. id], true)
 end)
 
 hooksecurefunc("MultiActionButtonUp", function(bar, id)
-    local btn = _G[bar .. "Button" .. id]
-    local spellID = GetSpellIdFromButton(btn)
-    local icon = GetViewerIconBySpellId(spellID)
-    if icon then
-        self:ToggleHighlight(icon, false)
-    end
+    CH:HandleDefaultButton(_G[bar .. "Button" .. id], false)
 end)
-
