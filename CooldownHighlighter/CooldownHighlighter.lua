@@ -3,7 +3,7 @@ local CH = {}
 local LAB = LibStub and LibStub("LibActionButton-1.0", true)
 local viewerTypes = { "EssentialCooldownViewer", "UtilityCooldownViewer", "CDMGroups_Essential", "CDMGroups_Utility" }
 
-local function CreateSpellIDCollection(spellID)
+function CH:CreateSpellIDCollection(spellID)
     if not spellID then return nil end
 
     local collection = {}
@@ -29,7 +29,7 @@ end
 function CH:GetViewerIconBySpellId(spellID)
     if not spellID then return nil end
 
-    local spellIDCollection = CreateSpellIDCollection(spellID)
+    local spellIDCollection = CH:CreateSpellIDCollection(spellID)
     if not spellIDCollection then return nil end
 
     for _, viewerName in ipairs(viewerTypes) do
@@ -103,7 +103,6 @@ end
 function CH:ToggleHighlight(icon, show, style)
     if not icon then return end
     local textureFrame = self:CreateOrGetTextureFrame(icon, style)
-    print('debug')
     if show then textureFrame:Show() else textureFrame:Hide() end
 end
 
@@ -227,27 +226,26 @@ ElvUIFrame:SetScript("OnEvent", function(_, event, argument)
     end
 end)
 
-function CH:HandleDefaultButton(btn, isDown)
+function CH:DefaultButtonPress(btn, isDown)
     local spellID = CH:GetSpellIdFromButton(btn)
     local icon = CH:GetViewerIconBySpellId(spellID)
     if icon then
-        print('calling toggle with', icon, isDown)
         CH:ToggleHighlight(icon, isDown)
     end
 end
 
 hooksecurefunc("ActionButtonDown", function(id)
-    CH:HandleDefaultButton(_G["ActionButton" .. id], true)
+    CH:DefaultButtonPress(_G["ActionButton" .. id], true)
 end)
 
 hooksecurefunc("ActionButtonUp", function(id)
-    CH:HandleDefaultButton(_G["ActionButton" .. id], false)
+    CH:DefaultButtonPress(_G["ActionButton" .. id], false)
 end)
 
 hooksecurefunc("MultiActionButtonDown", function(bar, id)
-    CH:HandleDefaultButton(_G[bar .. "Button" .. id], true)
+    CH:DefaultButtonPress(_G[bar .. "Button" .. id], true)
 end)
 
 hooksecurefunc("MultiActionButtonUp", function(bar, id)
-    CH:HandleDefaultButton(_G[bar .. "Button" .. id], false)
+    CH:DefaultButtonPress(_G[bar .. "Button" .. id], false)
 end)
