@@ -19,6 +19,7 @@ end
 
 local function GetSpellIDFromCooldownId(cooldownID)
     if not cooldownID then return nil end
+    if type(cooldownID) ~= "number" then return nil end
 
     local cooldownIDInfo = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
     if cooldownIDInfo.spellID then
@@ -107,7 +108,7 @@ function CH:ToggleHighlight(icon, show, style)
 end
 
 function CH:ButtonPress(button, mouseButton, isDown, style)
-    local spellID = GetSpellIdFromButton(button)
+    local spellID = self:GetSpellIdFromButton(button)
     if not spellID then return end
 
     local icon = self:GetViewerIconBySpellId(spellID)
@@ -131,7 +132,7 @@ function CH:GetSpellIdFromButton(button)
         return id
     elseif abilityType == "macro" then
         local macroName = GetActionText(button.action)
-        return GetSpellIdFromMacroName(macroName)
+        return self:GetSpellIdFromMacroName(macroName)
     end
     return nil
 end
@@ -152,14 +153,14 @@ end
 function CH:HookDominosButton(button)
     if not button then return end
     local function handler(_, mouseButton, down)
-        CH:OnButtonPress(button, mouseButton, down, nil)
+        CH:ButtonPress(button, mouseButton, down, nil)
     end
     if button.bind and not button.IsCooldownHighlighter_BindHooked then
         button.bind:HookScript("PreClick", handler)
         button.IsCooldownHighlighter_BindHooked = true
     end
     if not button.IsCooldownHighlighterHooked then
-        self:HookButton_PreClick(button, nil)
+        self:HookCHToPreClick(button, nil)
     end
 end
 
@@ -179,7 +180,7 @@ function CH:RegisterLABCallbacks()
     LAB.__CooldownHighlighter_OnButtonUpdateRegistered = true
 
     LAB:RegisterCallback("OnButtonUpdate", function(_, button)
-        CH:HookButton_PreClick(button, nil)
+        CH:HookCHToPreClick(button, nil)
     end)
 end
 
@@ -189,7 +190,7 @@ function CH:RegisterElvUICallbacks()
     local ElvUILAB = ElvUI.Libs and ElvUI.Libs.LAB
     if not ElvUILAB then return end
     ElvUILAB:RegisterCallback("OnButtonUpdate", function(_, button)
-        CH:HookButton_PreClick(button, "ElvUI")
+        CH:HookCHToPreClick(button, "ElvUI")
     end)
 end
 
@@ -204,6 +205,8 @@ function CH:HookAllDominosButtons()
 end
 
 local LABFrame = CreateFrame("Frame")
+LABFrame:RegisterEvent("PLAYER_LOGIN")
+LABFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 LABFrame:SetScript("OnEvent", function()
     if not LAB then return end
     CH:RegisterLABCallbacks()
