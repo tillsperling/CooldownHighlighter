@@ -2,6 +2,7 @@ local CH = {}
 
 local LAB = LibStub and LibStub("LibActionButton-1.0", true)
 local viewerTypes = { "EssentialCooldownViewer", "UtilityCooldownViewer", "CDMGroups_Essential", "CDMGroups_Utility" }
+local pressedSpellByButton = {}
 
 function CH:CreateSpellIDCollection(spellID)
     if not spellID then return nil end
@@ -108,17 +109,43 @@ function CH:ToggleHighlight(icon, show, style)
 end
 
 function CH:ButtonPress(button, mouseButton, isDown, style)
-    local spellID = self:GetSpellIdFromButton(button)
-    if not spellID then return end
+    if not button then return end
 
-    local icon = self:GetViewerIconBySpellId(spellID)
-    if not icon then return end
+    if isDown then
+        local spellID = self:GetSpellIdFromButton(button)
+        if not spellID then return end
 
-    if style == "ElvUI" then
-        self:ToggleHighlight(icon, isDown == true, style)
+        pressedSpellByButton[button] = spellID
+
+        local icon = self:GetViewerIconBySpellId(spellID)
+        if not icon then return end
+
+        if style == "ElvUI" then
+            self:ToggleHighlight(icon, isDown == true, style)
+        else
+            if mouseButton ~= "LeftButton" and mouseButton ~= "RightButton" then
+                self:ToggleHighlight(icon, isDown == true, nil)
+            end
+        end
     else
-        if mouseButton ~= "LeftButton" and mouseButton ~= "RightButton" then
-            self:ToggleHighlight(icon, isDown == true, nil)
+        --[[
+            macros are causing problems with action bar addons, if a modifier is used and released before postclick
+            the determined spell id is then computed with the spell from the unmodified keypress, thus i look up the
+            spell from pressedSpellByButton table
+        ]]--
+        local spellID = pressedSpellByButton[button]
+        if not spellID then return end
+        pressedSpellByButton[button] = nil
+
+        local icon = self:GetViewerIconBySpellId(spellID)
+        if not icon then return end
+
+        if style == "ElvUI" then
+            self:ToggleHighlight(icon, false, style)
+        else
+            if mouseButton ~= "LeftButton" and mouseButton ~= "RightButton" then
+                self:ToggleHighlight(icon, false, nil)
+            end
         end
     end
 end
