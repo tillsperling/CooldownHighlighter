@@ -171,6 +171,7 @@ function CH:GetSpellIdFromMacroName(macroName)
 end
 
 function CH:HookCHToPreClick(button, style)
+    if not button or button.IsCooldownHighlighterHooked then return end
     button:HookScript("PreClick", function(self, mouseButton, down)
         CH:ButtonPress(self, mouseButton, down, style)
     end)
@@ -207,7 +208,9 @@ function CH:RegisterLABCallbacks()
     LAB.__CooldownHighlighter_OnButtonUpdateRegistered = true
 
     LAB:RegisterCallback("OnButtonUpdate", function(_, button)
-        CH:HookCHToPreClick(button, nil)
+        if not button.IsCooldownHighlighterHooked then
+            CH:HookCHToPreClick(button, nil)
+        end
     end)
 end
 
@@ -216,8 +219,11 @@ function CH:RegisterElvUICallbacks()
     if not ElvUI then return end
     local ElvUILAB = ElvUI.Libs and ElvUI.Libs.LAB
     if not ElvUILAB then return end
+
     ElvUILAB:RegisterCallback("OnButtonUpdate", function(_, button)
-        CH:HookCHToPreClick(button, "ElvUI")
+        if not button.IsCooldownHighlighterHooked then
+            CH:HookCHToPreClick(button, "ElvUI")
+        end
     end)
 end
 
