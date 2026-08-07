@@ -1,0 +1,104 @@
+name: Release addon
+
+on:
+  workflow_dispatch:
+    inputs:
+      addon_version:
+        description: "Addon version (for example 1.0.14, without v)"
+        required: true
+        type: string
+      wow_interfaces:
+        description: "WoW interface IDs, comma-separated (for example 120007)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: addon-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      ADDON_VERSION: ${{ inputs.addon_version }}
+      WOW_INTERFACES: ${{ inputs.wow_interfaces }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate release inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$ADDON_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "addon_version must look like 1.0.14 (without a leading v)." >&2
+            exit 1
+          fi
+
+          if [[ ! "$WOW_INTERFACES" =~ ^[0-9]{6}([[:space:]]*,[[:space:]]*[0-9]{6})*$ ]]; then
+            echo "wow_interfaces must contain one or more six-digit IDs separated by commas." >&2
+            exit 1
+          fi
+
+          if git rev-parse --verify --quiet "refs/tags/v$ADDON_VERSION"; then
+            echo "Tag v$ADDON_VERSION already exists." >&2
+            exit 1
+          fi
+
+      - name: Update TOC versions
+        shell: pwsh
+        run: |
+          $tocPath = "CooldownHighlighter/CooldownHighlighter.toc"
+          $interfaces = (($env:WOW_INTERFACES -split ',') | ForEach-Object { $_.Trim() }) -join ', '
+          $toc = Get-Content -Raw -LiteralPath $tocPath
+          $toc = $toc -replace '(?m)^## Interface:.*$', "## Interface: $interfaces"
+          $toc = $toc -replace '(?m)^## Version:.*$', "## Version: $env:ADDON_VERSION"
+          Set-Content -LiteralPath $tocPath -Value $toc -Encoding utf8NoBOM -NoNewline
+
+      - name: Commit version bump and create tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git diff --check
+          if git diff --quiet -- CooldownHighlighter/CooldownHighlighter.toc; then
+            echo "The requested versions are already present in the TOC." >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CooldownHighlighter/CooldownHighlighter.toc
+          git commit -m "release v$ADDON_VERSION"
+          git tag -a "v$ADDON_VERSION" -m "CooldownHighlighter v$ADDON_VERSION"
+
+      - name: Build release ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="CooldownHighlighter-v$ADDON_VERSION.zip"
+          zip -r "$archive" CooldownHighlighter
+          unzip -l "$archive"
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+
+      - name: Push release commit and tag
+        shell: bash
+        run: git push --atomic origin HEAD:main "v$ADDON_VERSION"
+
+      - name: Create GitHub release
+        shell: bash
+        run: |
+          gh release create "v$ADDON_VERSION" "$ARCHIVE" \
+            --title "CooldownHighlighter v$ADDON_VERSION" \
+            --generate-notes \
+            --verify-tag
