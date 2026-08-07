@@ -1,7 +1,7 @@
-## Interface: 120000, 120001, 120005, 120007
+## Interface: 120007, 120100
 ## Title: Cooldown Highlighter
 ## Notes: Syncing Buttonpress Highlight to the CDM
 ## Author: Owenwilson-Sylvanas
-## Version: 1.0.0
+## Version: 1.0.14
 
 CooldownHighlighter.lua
